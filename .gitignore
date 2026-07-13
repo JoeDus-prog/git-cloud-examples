@@ -1,0 +1,58 @@
+# ============
+# OS Generated Files
+# ============
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ============
+# IDE & Editor
+# ============
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ============
+# Build & Logs
+# ============
+*.log
+*.tmp
+*.temp
+build/
+dist/
+target/
+
+# ============
+# Environment & Secrets
+# ============
+.env
+.env.local
+.env.*.local
+
+# ============
+# Dependency Directories
+# ============
+node_modules/
+venv/
+__pycache__/
+
+# ============
+# Test & Coverage
+# ============
+coverage/
+.nyc_output/
+
+# ============
+# OS Packages
+# ============
+*.deb
+*.rpm
+*.exe
+*.dmg
+*.iso

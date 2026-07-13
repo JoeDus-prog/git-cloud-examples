@@ -1,0 +1,239 @@
+name: Basic CI/CD Workflow
+
+# =============================================================================
+# Grundlegender GitHub Actions Workflow
+# 
+# Dieser Workflow zeigt die wichtigsten Konzepte von GitHub Actions:
+# - Trigger (push, pull_request)
+# - Jobs und Steps
+# - Actions aus dem Marketplace
+# - Environment Variables
+# - Artifacts
+# 
+# Verwendung:
+#   1. Kopiere diese Datei nach .github/workflows/basic-workflow.yml
+#   2. Commit & Push
+#   3. Der Workflow wird automatisch ausgeführt
+# =============================================================================
+
+# =============================================================================
+# 1. TRIGGER - Wann soll der Workflow ausgeführt werden?
+# =============================================================================
+
+on:
+  # Bei Push auf main oder feature-Branches
+  push:
+    branches:
+      - main
+      - 'feature/**'  # Alle Branches die mit feature/ anfangen
+    
+  # Bei Pull Requests auf main
+  pull_request:
+    branches:
+      - main
+    
+  # Manuell über GitHub UI auslösbar
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Umgebung für das Deployment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+# =============================================================================
+# 2. ENVIRONMENT VARIABLES - Globale Variablen
+# =============================================================================
+
+env:
+  NODE_VERSION: 20
+  PYTHON_VERSION: '3.11'
+  DOCKER_IMAGE: 'my-app'
+
+# =============================================================================
+# 3. JOBS - Was soll ausgeführt werden?
+# =============================================================================
+
+jobs:
+  # ===========================================================================
+  # Job 1: Testen
+  # ===========================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    # Matrix-Strategie für mehrere Node.js Versionen
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    
+    steps:
+      # Step 1: Repository auschecken
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # Lade die gesamte Historie (nicht nur den letzten Commit)
+          fetch-depth: 0
+      
+      # Step 2: Node.js einrichten
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'  # Cached node_modules für schnellere Builds
+      
+      # Step 3: Abhängigkeiten installieren
+      - name: Install Dependencies
+        run: |
+          npm ci
+      
+      # Step 4: Linting ausführen
+      - name: Run Linter
+        run: |
+          npm run lint
+      
+      # Step 5: Tests ausführen
+      - name: Run Tests
+        run: |
+          npm test
+        env:
+          # Environment Variables für Tests
+          CI: true
+          NODE_ENV: test
+      
+      # Step 6: Test Coverage hochladen (optional)
+      - name: Upload Test Coverage
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: coverage/
+          retention-days: 7
+
+  # ===========================================================================
+  # Job 2: Build
+  # ===========================================================================
+  build:
+    name: Build Application
+    needs: test  # Wartet auf den test Job
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Build Application
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+          retention-days: 30
+
+  # ===========================================================================
+  # Job 3: Docker Build
+  # ===========================================================================
+  docker-build:
+    name: Build Docker Image
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ env.DOCKER_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================================================
+  # Job 4: Deployment
+  # ===========================================================================
+  deploy:
+    name: Deploy to Server
+    needs: [test, build, docker-build]
+    runs-on: ubuntu-latest
+    
+    # Nur auf main Branch ausführen
+    if: github.ref == 'refs/heads/main'
+    
+    # Environment für Deployment
+    environment:
+      name: production
+      url: https://my-app.example.com
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+      
+      - name: Deploy to S3
+        run: |
+          aws s3 sync dist/ s3://my-app-bucket \
+            --delete \
+            --cache-control "max-age=31536000,public"
+      
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+      
+      - name: Notify Slack
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_COLOR: good
+          SLACK_TITLE: "Deployment Successful"
+          SLACK_MESSAGE: "Application deployed to production"
+
+# =============================================================================
+# 4. WORKFLOW RUN CLEANUP (optional)
+# =============================================================================
+
+# Workflow-Runs nach 30 Tagen löschen (spart Speicherplatz)
+# Diese Option muss in den Repository Settings aktiviert werden

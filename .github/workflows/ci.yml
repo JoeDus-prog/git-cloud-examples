@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (Example)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies (Example)
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          fi
+
+      - name: Run Shell Script Tests
+        run: |
+          echo "Testing shell scripts..."
+          # Test if scripts are executable
+          if [ -f examples/git-basics/rebase-vs-merge.sh ]; then
+            chmod +x examples/git-basics/rebase-vs-merge.sh
+            bash -n examples/git-basics/rebase-vs-merge.sh
+          fi
+          if [ -f examples/cloud/aws/s3-deploy.sh ]; then
+            chmod +x examples/cloud/aws/s3-deploy.sh
+            bash -n examples/cloud/aws/s3-deploy.sh
+          fi
+
+      - name: Lint Markdown Files
+        run: |
+          echo "Linting markdown files..."
+          # Simple check for trailing whitespace
+          if grep -r "[[:space:]]$" --include="*.md" .; then
+            echo "::warning:: Trailing whitespace found in markdown files"
+          fi
+
+  shellcheck:
+    name: Shell Script Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: 'examples'

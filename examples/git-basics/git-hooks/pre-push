@@ -1,0 +1,178 @@
+#!/bin/sh
+
+# =============================================================================
+# Git Pre-Push Hook
+# 
+# Dieser Hook wird VOR jedem Push ausgeführt.
+# Er verhindert Pushes, wenn:
+#   - Es ungetestete Änderungen gibt
+#   - Die Branch nicht mit remote synchronisiert ist
+#   - Es Konflikte gibt
+# 
+# Installation:
+#   1. Kopiere diese Datei nach .git/hooks/pre-push
+#   2. Mache sie ausführbar: chmod +x .git/hooks/pre-push
+# =============================================================================
+
+# Farben für die Ausgabe
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Fehlerzähler
+ERRORS=0
+
+print_error() {
+    echo -e "${RED}✗ $1${NC}"
+    ERRORS=$((ERRORS + 1))
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠ $1${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}✓ $1${NC}"
+}
+
+echo ""
+echo "Running pre-push checks..."
+echo ""
+
+# =============================================================================
+# 1. Aktuellen Branch ermitteln
+# =============================================================================
+
+CURRENT_BRANCH=$(git branch --show-current)
+REMOTE_BRANCH="origin/$CURRENT_BRANCH"
+
+echo "Current branch: $CURRENT_BRANCH"
+echo "Remote branch: $REMOTE_BRANCH"
+echo ""
+
+# =============================================================================
+# 2. Überprüfen ob Branch mit Remote synchronisiert ist
+# =============================================================================
+
+echo "Checking if branch is up to date with remote..."
+
+# Überprüfen ob Remote-Branch existiert
+if ! git ls-remote --exit-code --heads origin "$CURRENT_BRANCH" > /dev/null 2>&1; then
+    # Branch existiert noch nicht auf Remote - das ist OK für neue Branches
+    print_success "New branch - no remote to compare with"
+else
+    # Überprüfen ob lokale Änderungen mit Remote synchronisiert sind
+    if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ]; then
+        print_error "Branch is not up to date with remote"
+        echo ""
+        echo "Please run:"
+        echo "  git pull --rebase"
+        echo ""
+    else
+        print_success "Branch is up to date with remote"
+    fi
+fi
+
+# =============================================================================
+# 3. Überprüfen auf ungetestete Änderungen
+# =============================================================================
+
+echo ""
+echo "Checking for uncommitted changes..."
+
+# Überprüfen auf unstaged Änderungen
+if ! git diff --quiet; then
+    print_error "Unstaged changes detected"
+    echo ""
+    echo "Please stage or commit your changes:"
+    git status --short
+    echo ""
+fi
+
+# Überprüfen auf uncommitted (staged) Änderungen
+if ! git diff --cached --quiet; then
+    print_error "Uncommitted staged changes detected"
+    echo ""
+    echo "Please commit your changes:"
+    git status --short
+    echo ""
+fi
+
+# =============================================================================
+# 4. Überprüfen auf Merge-Konflikte
+# =============================================================================
+
+echo ""
+echo "Checking for merge conflicts..."
+
+if git ls-files --unmerged | grep -q .; then
+    print_error "Merge conflicts detected"
+    echo ""
+    echo "Please resolve conflicts first:"
+    git status --short
+    echo ""
+fi
+
+# =============================================================================
+# 5. Tests ausführen (falls verfügbar)
+# =============================================================================
+
+if [ -f "package.json" ] && command -v npm > /dev/null 2>&1; then
+    echo ""
+    echo "Running tests..."
+    if ! npm test > /dev/null 2>&1; then
+        print_error "Tests failed. Push aborted."
+        echo ""
+        echo "Run 'npm test' to see errors."
+    else
+        print_success "Tests passed"
+    fi
+fi
+
+# =============================================================================
+# 6. Branch-Schutz überprüfen
+# =============================================================================
+
+echo ""
+echo "Checking branch protection rules..."
+
+# Schutz für main/master Branches
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+    print_error "Direct push to $CURRENT_BRANCH is not allowed"
+    echo ""
+    echo "Please use a feature branch and create a Pull Request."
+fi
+
+# =============================================================================
+# 7. Commit-Historie überprüfen
+# =============================================================================
+
+echo ""
+echo "Checking commit history..."
+
+# Überprüfen auf zu viele Commits auf einmal
+COMMIT_COUNT=$(git rev-list --count HEAD@{1}..HEAD 2>/dev/null || echo "0")
+
+if [ "$COMMIT_COUNT" -gt 20 ]; then
+    print_warning "Pushing $COMMIT_COUNT commits at once"
+    print_warning "Consider splitting into smaller, focused commits"
+fi
+
+# =============================================================================
+# Ergebnis
+# =============================================================================
+
+echo ""
+
+if [ $ERRORS -gt 0 ]; then
+    echo -e "${RED}Pre-push checks failed with $ERRORS error(s)${NC}"
+    echo ""
+    echo "Fix the errors and try pushing again."
+    exit 1
+else
+    echo -e "${GREEN}All pre-push checks passed!${NC}"
+    echo ""
+    echo "Pushing to $REMOTE_BRANCH..."
+    exit 0
+fi
