@@ -73,7 +73,7 @@ jobs:
     steps:
       # Step 1: Repository auschecken
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           # Lade die gesamte Historie (nicht nur den letzten Commit)
           fetch-depth: 0
@@ -123,7 +123,7 @@ jobs:
     
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -156,7 +156,7 @@ jobs:
     
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -195,7 +195,7 @@ jobs:
     
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
