@@ -13,11 +13,11 @@ name: Basic CI/CD Workflow
 # Verwendung:
 #   1. Kopiere diese Datei nach .github/workflows/basic-workflow.yml
 #   2. Commit & Push
-#   3. Der Workflow wird automatisch ausgeführt
+#   3. Der Workflow wird automatisch ausgefuehrt
 # =============================================================================
 
 # =============================================================================
-# 1. TRIGGER - Wann soll der Workflow ausgeführt werden?
+# 1. TRIGGER - Wann soll der Workflow ausgefuehrt werden?
 # =============================================================================
 
 on:
@@ -49,12 +49,12 @@ on:
 # =============================================================================
 
 env:
-  NODE_VERSION: 24
+  NODE_VERSION: 22
   PYTHON_VERSION: '3.11'
   DOCKER_IMAGE: 'my-app'
 
 # =============================================================================
-# 3. JOBS - Was soll ausgeführt werden?
+# 3. JOBS - Was soll ausgefuehrt werden?
 # =============================================================================
 
 jobs:
@@ -68,7 +68,7 @@ jobs:
     # Matrix-Strategie für mehrere Node.js Versionen
     strategy:
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [20, 22]
     
     steps:
       # Step 1: Repository auschecken
@@ -230,10 +230,3 @@ jobs:
           SLACK_COLOR: good
           SLACK_TITLE: "Deployment Successful"
           SLACK_MESSAGE: "Application deployed to production"
-
-# =============================================================================
-# 4. WORKFLOW RUN CLEANUP (optional)
-# =============================================================================
-
-# Workflow-Runs nach 30 Tagen löschen (spart Speicherplatz)
-# Diese Option muss in den Repository Settings aktiviert werden
