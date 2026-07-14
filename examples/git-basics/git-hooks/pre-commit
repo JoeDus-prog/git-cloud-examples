@@ -3,7 +3,7 @@
 # =============================================================================
 # Git Pre-Commit Hook
 # 
-# Dieser Hook wird VOR jedem Commit ausgeführt.
+# Dieser Hook wird VOR jedem Commit ausgefuehrt.
 # Er verhindert Commits, wenn:
 #   - Es Linting-Fehler gibt
 #   - Tests fehlschlagen
@@ -11,58 +11,54 @@
 # 
 # Installation:
 #   1. Kopiere diese Datei nach .git/hooks/pre-commit
-#   2. Mache sie ausführbar: chmod +x .git/hooks/pre-commit
+#   2. Mache sie ausfuehrbar: chmod +x .git/hooks/pre-commit
 # =============================================================================
 
-# Farben für die Ausgabe
+# Farben fuer die Ausgabe
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Fehlerzähler
+# Fehlerzaehler
 ERRORS=0
 
 # Funktion zum Ausgeben von Fehlern
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    printf "%s\n" "${RED}✗ $1${NC}"
     ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+    printf "%s\n" "${YELLOW}⚠ $1${NC}"
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    printf "%s\n" "${GREEN}✓ $1${NC}"
 }
 
-echo ""
-echo "Running pre-commit checks..."
-echo ""
+printf "\nRunning pre-commit checks...\n\n"
 
 # =============================================================================
-# 1. Überprüfen auf große Dateien (> 10MB)
+# 1. Ueberpruefen auf grosse Dateien (> 10MB)
 # =============================================================================
 
-echo "Checking for large files..."
+printf "Checking for large files...\n"
 LARGE_FILES=$(git diff --cached --name-only | xargs find -type f -size +10M 2>/dev/null)
 
 if [ -n "$LARGE_FILES" ]; then
     print_error "Large files detected (> 10MB):"
-    echo "$LARGE_FILES"
-    echo ""
-    echo "Please use git lfs for large files or remove them from the commit."
-    echo ""
+    printf "%s\n" "$LARGE_FILES"
+    printf "\nPlease use git lfs for large files or remove them from the commit.\n\n"
 fi
 
 # =============================================================================
-# 2. Überprüfen auf Secrets (API Keys, Passwords, etc.)
+# 2. Ueberpruefen auf Secrets (API Keys, Passwords, etc.)
 # =============================================================================
 
-echo "Checking for potential secrets..."
+printf "Checking for potential secrets...\n"
 
-# Muster für Secrets
+# Muster fuer Secrets
 SECRET_PATTERNS=(
     "API_KEY"
     "API_SECRET"
@@ -78,11 +74,11 @@ SECRET_PATTERNS=(
     "aws_secret_access_key"
 )
 
-# Dateien im Staging-Bereich überprüfen
+# Dateien im Staging-Bereich ueberpruefen
 STAGED_FILES=$(git diff --cached --name-only)
 
 for FILE in $STAGED_FILES; do
-    # Nur Textdateien überprüfen
+    # Nur Textdateien ueberpruefen
     if file "$FILE" | grep -q "text"; then
         for PATTERN in "${SECRET_PATTERNS[@]}"; do
             if grep -i -q "$PATTERN" "$FILE" 2>/dev/null; then
@@ -93,23 +89,24 @@ for FILE in $STAGED_FILES; do
 done
 
 # =============================================================================
-# 3. Überprüfen auf Trailing Whitespace
+# 3. Ueberpruefen auf Trailing Whitespace
 # =============================================================================
 
-echo "Checking for trailing whitespace..."
+printf "Checking for trailing whitespace...\n"
 TRAILING_WHITESPACE=$(git diff --cached --check | grep -c "^+" || true)
 
 if [ "$TRAILING_WHITESPACE" -gt 0 ]; then
-    print_error "Trailing whitespace found in $(git diff --cached --check | grep "^+" | wc -l) line(s)"
-    echo "Run 'git diff --cached --check' to see the lines."
+    LINE_COUNT=$(git diff --cached --check | grep "^+" | wc -l)
+    print_error "Trailing whitespace found in ${LINE_COUNT} line(s)"
+    printf "Run 'git diff --cached --check' to see the lines.\n"
 fi
 
 # =============================================================================
-# 4. Linting (falls verfügbar)
+# 4. Linting (falls verfuegbar)
 # =============================================================================
 
 if [ -f "package.json" ] && command -v npm > /dev/null 2>&1; then
-    echo "Running npm lint..."
+    printf "Running npm lint...\n"
     if ! npm run lint > /dev/null 2>&1; then
         print_error "Linting failed. Run 'npm run lint' to see errors."
     else
@@ -118,7 +115,7 @@ if [ -f "package.json" ] && command -v npm > /dev/null 2>&1; then
 fi
 
 if [ -f "requirements.txt" ] && command -v flake8 > /dev/null 2>&1; then
-    echo "Running flake8..."
+    printf "Running flake8...\n"
     STAGED_PYTHON_FILES=$(git diff --cached --name-only | grep '\.py$')
     if [ -n "$STAGED_PYTHON_FILES" ]; then
         if ! flake8 $STAGED_PYTHON_FILES; then
@@ -130,11 +127,11 @@ if [ -f "requirements.txt" ] && command -v flake8 > /dev/null 2>&1; then
 fi
 
 # =============================================================================
-# 5. Tests (falls verfügbar)
+# 5. Tests (falls verfuegbar)
 # =============================================================================
 
 if [ -f "package.json" ] && command -v npm > /dev/null 2>&1; then
-    echo "Running tests..."
+    printf "Running tests...\n"
     if ! npm test > /dev/null 2>&1; then
         print_error "Tests failed. Run 'npm test' to see errors."
     else
@@ -143,25 +140,25 @@ if [ -f "package.json" ] && command -v npm > /dev/null 2>&1; then
 fi
 
 # =============================================================================
-# 6. Commit-Nachricht überprüfen
+# 6. Commit-Nachricht ueberpruefen
 # =============================================================================
 
-echo "Checking commit message..."
+printf "Checking commit message...\n"
 COMMIT_MSG_FILE="$1"
 COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
 
-# Überprüfen auf leere Commit-Nachricht
+# Ueberpruefen auf leere Commit-Nachricht
 if [ -z "$COMMIT_MSG" ]; then
     print_error "Empty commit message"
 fi
 
-# Überprüfen auf zu kurze Commit-Nachricht (mind. 10 Zeichen)
-if [ ${#COMMIT_MSG} -lt 10 ]; then
+# Ueberpruefen auf zu kurze Commit-Nachricht (mind. 10 Zeichen)
+if [ "${#COMMIT_MSG}" -lt 10 ]; then
     print_error "Commit message too short (minimum 10 characters)"
 fi
 
-# Überprüfen auf Conventional Commits Format
-if ! echo "$COMMIT_MSG" | grep -qE '^(feat|fix|docs|style|refactor|test|chore)(\([^)]*\))?: .+$'; then
+# Ueberpruefen auf Conventional Commits Format
+if ! printf "%s" "$COMMIT_MSG" | grep -qE '^(feat|fix|docs|style|refactor|test|chore)(\([^)]*\))?: .+$'; then
     print_warning "Commit message does not follow Conventional Commits format"
     print_warning "Recommended format: type(scope): description"
     print_warning "Types: feat, fix, docs, style, refactor, test, chore"
@@ -171,14 +168,13 @@ fi
 # Ergebnis
 # =============================================================================
 
-echo ""
+printf "\n"
 
-if [ $ERRORS -gt 0 ]; then
-    echo -e "${RED}Pre-commit checks failed with $ERRORS error(s)${NC}"
-    echo ""
-    echo "Fix the errors and try committing again."
+if [ "$ERRORS" -gt 0 ]; then
+    printf "%s\n" "${RED}Pre-commit checks failed with $ERRORS error(s)${NC}"
+    printf "\nFix the errors and try committing again.\n"
     exit 1
 else
-    echo -e "${GREEN}All pre-commit checks passed!${NC}"
+    printf "%s\n" "${GREEN}All pre-commit checks passed!${NC}"
     exit 0
 fi

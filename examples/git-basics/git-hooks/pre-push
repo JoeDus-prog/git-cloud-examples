@@ -3,42 +3,40 @@
 # =============================================================================
 # Git Pre-Push Hook
 # 
-# Dieser Hook wird VOR jedem Push ausgeführt.
+# Dieser Hook wird VOR jedem Push ausgefuehrt.
 # Er verhindert Pushes, wenn:
-#   - Es ungetestete Änderungen gibt
+#   - Es ungetestete Aenderungen gibt
 #   - Die Branch nicht mit remote synchronisiert ist
 #   - Es Konflikte gibt
 # 
 # Installation:
 #   1. Kopiere diese Datei nach .git/hooks/pre-push
-#   2. Mache sie ausführbar: chmod +x .git/hooks/pre-push
+#   2. Mache sie ausfuehrbar: chmod +x .git/hooks/pre-push
 # =============================================================================
 
-# Farben für die Ausgabe
+# Farben fuer die Ausgabe
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Fehlerzähler
+# Fehlerzaehler
 ERRORS=0
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    printf "%s\n" "${RED}✗ $1${NC}"
     ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+    printf "%s\n" "${YELLOW}⚠ $1${NC}"
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    printf "%s\n" "${GREEN}✓ $1${NC}"
 }
 
-echo ""
-echo "Running pre-push checks..."
-echo ""
+printf "\nRunning pre-push checks...\n\n"
 
 # =============================================================================
 # 1. Aktuellen Branch ermitteln
@@ -47,111 +45,98 @@ echo ""
 CURRENT_BRANCH=$(git branch --show-current)
 REMOTE_BRANCH="origin/$CURRENT_BRANCH"
 
-echo "Current branch: $CURRENT_BRANCH"
-echo "Remote branch: $REMOTE_BRANCH"
-echo ""
+printf "Current branch: %s\n" "$CURRENT_BRANCH"
+printf "Remote branch: %s\n\n" "$REMOTE_BRANCH"
 
 # =============================================================================
-# 2. Überprüfen ob Branch mit Remote synchronisiert ist
+# 2. Ueberpruefen ob Branch mit Remote synchronisiert ist
 # =============================================================================
 
-echo "Checking if branch is up to date with remote..."
+printf "Checking if branch is up to date with remote...\n"
 
-# Überprüfen ob Remote-Branch existiert
+# Ueberpruefen ob Remote-Branch existiert
 if ! git ls-remote --exit-code --heads origin "$CURRENT_BRANCH" > /dev/null 2>&1; then
-    # Branch existiert noch nicht auf Remote - das ist OK für neue Branches
+    # Branch existiert noch nicht auf Remote - das ist OK fuer neue Branches
     print_success "New branch - no remote to compare with"
 else
-    # Überprüfen ob lokale Änderungen mit Remote synchronisiert sind
+    # Ueberpruefen ob lokale Aenderungen mit Remote synchronisiert sind
     if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ]; then
         print_error "Branch is not up to date with remote"
-        echo ""
-        echo "Please run:"
-        echo "  git pull --rebase"
-        echo ""
+        printf "\nPlease run:\n"
+        printf "  git pull --rebase\n\n"
     else
         print_success "Branch is up to date with remote"
     fi
 fi
 
 # =============================================================================
-# 3. Überprüfen auf ungetestete Änderungen
+# 3. Ueberpruefen auf ungetestete Aenderungen
 # =============================================================================
 
-echo ""
-echo "Checking for uncommitted changes..."
+printf "\nChecking for uncommitted changes...\n"
 
-# Überprüfen auf unstaged Änderungen
+# Ueberpruefen auf unstaged Aenderungen
 if ! git diff --quiet; then
     print_error "Unstaged changes detected"
-    echo ""
-    echo "Please stage or commit your changes:"
+    printf "\nPlease stage or commit your changes:\n"
     git status --short
-    echo ""
+    printf "\n"
 fi
 
-# Überprüfen auf uncommitted (staged) Änderungen
+# Ueberpruefen auf uncommitted (staged) Aenderungen
 if ! git diff --cached --quiet; then
     print_error "Uncommitted staged changes detected"
-    echo ""
-    echo "Please commit your changes:"
+    printf "\nPlease commit your changes:\n"
     git status --short
-    echo ""
+    printf "\n"
 fi
 
 # =============================================================================
-# 4. Überprüfen auf Merge-Konflikte
+# 4. Ueberpruefen auf Merge-Konflikte
 # =============================================================================
 
-echo ""
-echo "Checking for merge conflicts..."
+printf "\nChecking for merge conflicts...\n"
 
 if git ls-files --unmerged | grep -q .; then
     print_error "Merge conflicts detected"
-    echo ""
-    echo "Please resolve conflicts first:"
+    printf "\nPlease resolve conflicts first:\n"
     git status --short
-    echo ""
+    printf "\n"
 fi
 
 # =============================================================================
-# 5. Tests ausführen (falls verfügbar)
+# 5. Tests ausfuehren (falls verfuegbar)
 # =============================================================================
 
 if [ -f "package.json" ] && command -v npm > /dev/null 2>&1; then
-    echo ""
-    echo "Running tests..."
+    printf "\nRunning tests...\n"
     if ! npm test > /dev/null 2>&1; then
         print_error "Tests failed. Push aborted."
-        echo ""
-        echo "Run 'npm test' to see errors."
+        printf "\nRun 'npm test' to see errors.\n"
     else
         print_success "Tests passed"
     fi
 fi
 
 # =============================================================================
-# 6. Branch-Schutz überprüfen
+# 6. Branch-Schutz ueberpruefen
 # =============================================================================
 
-echo ""
-echo "Checking branch protection rules..."
+printf "\nChecking branch protection rules...\n"
 
-# Schutz für main/master Branches
+# Schutz fuer main/master Branches
 if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
     print_error "Direct push to $CURRENT_BRANCH is not allowed"
-    echo ""
-    echo "Please use a feature branch and create a Pull Request."
+    printf "\nPlease use a feature branch and create a Pull Request.\n"
 fi
 
 # =============================================================================
-# 7. Commit-Historie überprüfen
+# 7. Commit-Historie ueberpruefen
 # =============================================================================
 
-echo ""
-echo "Checking commit history..."
+printf "\nChecking commit history...\n"
 
-# Überprüfen auf zu viele Commits auf einmal
+# Ueberpruefen auf zu viele Commits auf einmal
 COMMIT_COUNT=$(git rev-list --count HEAD@{1}..HEAD 2>/dev/null || echo "0")
 
 if [ "$COMMIT_COUNT" -gt 20 ]; then
@@ -163,16 +148,14 @@ fi
 # Ergebnis
 # =============================================================================
 
-echo ""
+printf "\n"
 
-if [ $ERRORS -gt 0 ]; then
-    echo -e "${RED}Pre-push checks failed with $ERRORS error(s)${NC}"
-    echo ""
-    echo "Fix the errors and try pushing again."
+if [ "$ERRORS" -gt 0 ]; then
+    printf "%s\n" "${RED}Pre-push checks failed with $ERRORS error(s)${NC}"
+    printf "\nFix the errors and try pushing again.\n"
     exit 1
 else
-    echo -e "${GREEN}All pre-push checks passed!${NC}"
-    echo ""
-    echo "Pushing to $REMOTE_BRANCH..."
+    printf "%s\n" "${GREEN}All pre-push checks passed!${NC}"
+    printf "\nPushing to %s...\n" "$REMOTE_BRANCH"
     exit 0
 fi
