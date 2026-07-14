@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Cloud Examples</title>
+    <style>
+        :root {
+            --primary-color: #0366d6;
+            --secondary-color: #21262d;
+            --background-color: #ffffff;
+            --text-color: #24292e;
+            --light-text: #6e7681;
+            --border-color: #d0d7de;
+            --success-color: #22863a;
+            --warning-color: #f85149;
+            --hover-color: #f0f8ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--light-text);
+            font-size: 1.1rem;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #f6f8fa 0%, #eaeef2 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .hero h2 {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            color: var(--light-text);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background-color: #005cc5;
+        }
+
+        .btn-secondary {
+            background-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #b0b7bf;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.75rem;
+            font-size: 1.25rem;
+        }
+
+        .card p {
+            color: var(--light-text);
+            margin-bottom: 1rem;
+        }
+
+        .card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .card li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card li:last-child {
+            border-bottom: none;
+        }
+
+        .card li::before {
+            content: "✓";
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .code-block {
+            background: #f6f8fa;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875rem;
+            color: var(--text-color);
+        }
+
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: var(--hover-color);
+            color: var(--primary-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--light-text);
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+
+        .github-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+
+        .github-badge:hover {
+            background: #393e46;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .hero {
+                padding: 1.5rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🚀 Git Cloud Examples</h1>
+            <p>Praktische Beispiele für Git-Workflows und Cloud-Integration</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Willkommen!</h2>
+            <p>
+                Diese Sammlung enthält praktische Beispiele, Skripte und Anleitungen für 
+                effizientes Arbeiten mit Git und Cloud-Diensten wie AWS, GitHub Actions und mehr.
+            </p>
+            <a href="https://github.com/JoeDus-prog/git-cloud-examples" class="btn">
+                📁 Repository auf GitHub
+            </a>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">📚 Dokumentation</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>README</h3>
+                    <p>Hauptdokumentation mit Projektübersicht und Struktur.</p>
+                    <a href="README.md" class="btn btn-secondary">Lesen</a>
+                </div>
+                <div class="card">
+                    <h3>Git Best Practices</h3>
+                    <p>Tipps und Tricks für effizientes Arbeiten mit Git.</p>
+                    <ul>
+                        <li>Commit-Nachrichten</li>
+                        <li>Branching-Strategien</li>
+                        <li>Rebase vs. Merge</li>
+                        <li>Git-Hooks</li>
+                    </ul>
+                    <a href="docs/git-best-practices.md" class="btn btn-secondary">Lesen</a>
+                </div>
+                <div class="card">
+                    <h3>Cloud Deployment</h3>
+                    <p>Anleitungen für Deployment in verschiedene Cloud-Umgebungen.</p>
+                    <ul>
+                        <li>GitHub Actions</li>
+                        <li>AWS S3 & Lambda</li>
+                        <li>Docker & Container</li>
+                        <li>Best Practices</li>
+                    </ul>
+                    <a href="docs/cloud-deployment.md" class="btn btn-secondary">Lesen</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">🛠️ Git Beispiele</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Rebase vs. Merge</h3>
+                    <span class="tag">Demo-Skript</span>
+                    <p>Zeigt den Unterschied zwischen <code>git merge</code> und <code>git rebase</code> an einem praktischen Beispiel.</p>
+                    <div class="code-block">
+                        <pre>./examples/git-basics/rebase-vs-merge.sh</pre>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Interaktives Rebase</h3>
+                    <span class="tag">Demo-Skript</span>
+                    <p>Führt dich durch den interaktiven Rebase-Prozess mit <code>git rebase -i</code>.</p>
+                    <div class="code-block">
+                        <pre>./examples/git-basics/interactive-rebase.sh</pre>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Git Hooks</h3>
+                    <span class="tag">Pre-Commit</span>
+                    <span class="tag">Pre-Push</span>
+                    <p>Beispiel-Hooks für automatische Checks vor Commit und Push.</p>
+                    <ul>
+                        <li>Pre-Commit: Linting, Tests, Secret-Check</li>
+                        <li>Pre-Push: Branch-Sync, Conflict-Check</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">☁️ Cloud Beispiele</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>AWS S3 Deployment</h3>
+                    <span class="tag">Bash-Skript</span>
+                    <p>Deployt Dateien zu einem AWS S3 Bucket mit Option für CloudFront Cache Invalidation.</p>
+                    <div class="code-block">
+                        <pre>./examples/cloud/aws/s3-deploy.sh --bucket MEIN_BUCKET</pre>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>GitHub Actions Workflow</h3>
+                    <span class="tag">YAML</span>
+                    <p>Vollständiger CI/CD Workflow für GitHub Actions mit Tests, Build und Deployment.</p>
+                    <ul>
+                        <li>Node.js Setup</li>
+                        <li>Automatische Tests</li>
+                        <li>Docker Build</li>
+                        <li>AWS Deployment</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">💡 Schnellstart</h2>
+            <div class="card">
+                <h3>Lokale Nutzung</h3>
+                <div class="code-block">
+                    <pre># Repository klonen
+git clone https://github.com/JoeDus-prog/git-cloud-examples.git
+cd git-cloud-examples
+
+# Skripte ausführbar machen
+chmod +x examples/git-basics/*.sh
+chmod +x examples/cloud/aws/*.sh
+
+# Beispiel ausführen
+./examples/git-basics/rebase-vs-merge.sh</pre>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>
+                <strong>Git Cloud Examples</strong> – Eine Sammlung von Beispielen für Git und Cloud-Integration.
+            </p>
+            <p>
+                © 2024 JoeDus-prog | 
+                <a href="LICENSE" style="color: var(--primary-color);">MIT License</a>
+            </p>
+            <a href="https://github.com/JoeDus-prog/git-cloud-examples" class="github-badge">
+                🐙 View on GitHub
+            </a>
+        </div>
+    </footer>
+</body>
+</html>
